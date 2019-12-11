@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+
 """
 Adds qrcode rendering
 """
@@ -9,6 +10,7 @@ from marshmallow import fields, Schema
 import os
 import pyqrcode
 import sys
+from typing import List, Dict
 import urwid
 import yaml
 
@@ -28,7 +30,7 @@ class YamlRender:
 
 class QrColumn(Schema):
     data = fields.String()
-    autocaption = fields.Boolean(default=False, missing=False)
+    autocaption = fields.Boolean(default=True, missing=True)
     caption = fields.String(default=None, missing=None)
 
 
@@ -42,22 +44,29 @@ class QrSchema(Schema):
 # -----------------------------------------------------------------------------
 
 
-def blocks_to_squares(blocks):
+def blocks_to_squares(blocks: List[List[int]]) -> List[List[List[int]]]:
     """Returns a list of list of blocks of four squares at a time. E.g.
 
     .. code-block:: python
 
         blocks = [
-            [0, 0, 1, 1],
-            [1, 0, 0, 1],
+            [A, B, 1, 1],
+            [C, D, 0, 1],
         ]
 
-        # the first yielded value would be a list of two squares:
+        # would return the list below containing a list of rows, with each
+        # row being a list of squares
 
-        [ [0, 0, 1, 0], [1, 1, 0, 1] ]
+        [ [ [A, B, C, D], [1, 1, 0, 1] ] ]
 
-    In the yielded squares, the square coords start in the top-left and move
-    clockwise around the square.
+    In the returned squares, the square coords go:
+
+      * top-left
+      * top-right
+      * bottom-left
+      * bottom-right
+
+    :param blocks: List of blocks to transform into squares
     """
     max_row = len(blocks)
     max_col = len(blocks[0])
@@ -86,8 +95,10 @@ def blocks_to_squares(blocks):
     return square_rows
 
 
-def spec_from_square(square) -> list:
+def spec_from_square(square: List[int]) -> list:
     """Create a list of urwid.Text specs from a square
+
+    :param square: The square to create the specs from
     """
     fg = "white"
     bg = "black"
@@ -134,16 +145,16 @@ def spec_from_square(square) -> list:
     elif square == [X, X, X, 0]:
         res = [(invert(), "█"), (normal(), "▄")]
 
-    else:
-        raise NotImplementedError(f"Unimplemented square {square}")
-
     if not isinstance(res, list):
         res = [res]
     return res
 
 
-def add_padding(code, width=4):
+def add_padding(code: List[List[int]], width:int=4) -> List[List[int]]:
     """Add ``width`` number of blocks of padding to the code
+
+    :param code: The qrcode on/off image
+    :param width: The amount of padding to add
     """
     # add four to the left and right
     lr_padding = [0] * width
@@ -166,6 +177,8 @@ def add_padding(code, width=4):
 
 def qrcode_raw_render(data: str) -> urwid.Text:
     """Render the qrcode into an urwid.Text
+
+    :param data: The data to encode in a qrcode and render 
     """
     res = pyqrcode.create(data)
 
@@ -207,8 +220,9 @@ def qrcode_render(data: str, autocaption: bool=True, caption: str=None) -> urwid
     return urwid.Padding(urwid.Pile(items), align="center", width="pack")
 
 
-def qrcode_ex(data):
-    """
+def qrcode_ex(data: dict) -> urwid.Columns:
+    """Handle the structured QR data (parsed from the YAML) to render QR
+    codes for each defined column.
     """
     cols = []
     for column in data["columns"]:
@@ -222,7 +236,28 @@ def qrcode_ex(data):
     return urwid.Columns(cols)
 
 
-def render_code(token, body, stack, loop):
+def render_code(token: Dict, body: urwid.Widget, stack: List[urwid.Widget], loop: urwid.MainLoop):
+    """Main extension function that has first-chance at handling the ``render_code``
+    function ``lookatme.render.markdown_block``
+
+    This extension ignores all code blocks **except** ones with the language
+    ``qrcode`` or ``qrcode-ex``.
+
+    * ``qrcode-ex`` - Expects the contents of the code block to be yaml of
+      the form:
+
+    .. code-block:: yaml
+
+        columns:
+          - data: "Data to be qr encoded"
+            autocaption: true/false # optional
+            caption: "Manual markdown caption" # optional
+
+    One or more columns may defined to render QR codes side-by-side
+
+    If ``autocaption`` is True **and** ``caption`` is None, the caption will
+    be set to the data that is QR encoded.
+    """
     lang = token["lang"] or ""
     # match qrcode2
     if lang not in ["qrcode", "qrcode-ex"]:

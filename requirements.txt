@@ -1,0 +1,2 @@
+lookatme>=0.5
+PyQRCode>=1,<2
