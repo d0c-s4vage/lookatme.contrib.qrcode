@@ -13,16 +13,8 @@ QR code rendering capabilities to the code blocks.
 
 ## Installation
 
-If this project has been pushed up to pypi:
-
 ```bash
 pip install lookatme.contrib.qrcode
-```
-
-otherwise:
-
-```bash
-pip install ./path/to/lookatme.contrib.qrcode
 ```
 
 ## Usage
