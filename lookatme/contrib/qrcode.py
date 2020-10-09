@@ -213,7 +213,7 @@ def qrcode_render(data: str, autocaption: bool=True, caption: str=None) -> urwid
     if autocaption and caption is None:
         caption = data.split("\n")[0]
     if caption is not None:
-        caption_text = md_block.render_text(text=caption)
+        caption_text = md_block.render_text(text=caption)[0]
         caption_text.align = "center"
         items.append(caption_text)
 

@@ -1,2 +1,2 @@
-lookatme>=0.5
+lookatme>=2.0.0
 PyQRCode>=1,<2
