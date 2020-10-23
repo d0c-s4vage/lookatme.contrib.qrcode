@@ -20,6 +20,12 @@ from lookatme.utils import row_text
 import lookatme.render.markdown_block as md_block
 
 
+def user_warnings():
+    """No warnings here
+    """
+    return []
+
+
 # -----------------------------------------------------------------------------
 
 
