@@ -273,7 +273,7 @@ def render_code(token: Dict, body: urwid.Widget, stack: List[urwid.Widget], loop
     if lang == "qrcode-ex":
         data = QrSchema().loads(content)
     else:
-        column = QrColumn().dump(QrColumn())
+        column = QrColumn().dump({})
         column["data"] = content
         data = { "columns": [ column ] }
 
